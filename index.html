@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="style.css">
+        <title>Search visualizer</title>
+    </head>
+    <body>
+        <div id="topBar">
+            <ul>
+                <li><a>Search algorithm visualizer</a></li>
+                <li class="dropdown">
+                    <a  class="dropbtn">Select algorithm</a>
+                    <div class="dropdown-content">
+                      <a onclick="setAlgo(&quot;bfs&quot;)" id="bfs" class="active">Breadth First Search</a>
+                      <a onclick="setAlgo(&quot;dfs&quot;)" id="dfs">Depth First Search</a>
+                      <a onclick="setAlgo(&quot;astar&quot;)" id="astar">A*</a>
+                    </div>
+                  </li>
+                  <li onclick="run()"><a>Run</a></li>
+                  <li onclick="setTool(&quot;wall&quot;)" id="wall" style="float:right"><a>Wall</a></li>
+                  <li onclick="setTool(&quot;end&quot;)" id="end" style="float:right"><a>End</a></li>
+                  <li onclick="setTool(&quot;start&quot;)" id="start" style="float:right" class="active"><a>Start</a></li>
+              </ul>
+        </div>
+        <canvas id="canvas" onclick="placeObject(event)">
+
+        </canvas>
+        <script src="script.js"></script>
+    </body>
+</html>
