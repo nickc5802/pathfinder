@@ -136,7 +136,47 @@ function run() {
 }
 
 async function bfs() {
+    let predecessor = {};
+    predecessor[[startX,startY].toString()] = null;
+    
+    let toVisit = [];
+    getNeighbors(startX, startY).forEach(nbr => {
+        predecessor[nbr.toString()] = [startX,startY];
+        toVisit.push(nbr);
+    });
 
+    while (toVisit.length != 0 && !(toVisit[0][0] == endX && toVisit[0][1] == endY)) {
+        let pos = toVisit.shift();
+        if (grid[pos[0]][pos[1]] != objects.start) {
+            grid[pos[0]][pos[1]] = objects.current;
+        }
+        draw();
+        await sleep(50);
+        if (grid[pos[0]][pos[1]] != objects.start) {
+            grid[pos[0]][pos[1]] = objects.visited;
+        }
+        getNeighbors(pos[0], pos[1]).forEach(nbr => {
+            if (!predecessor.hasOwnProperty(nbr.toString())) {
+                predecessor[nbr.toString()] = pos;
+                toVisit.push(nbr);
+            }
+        })
+    }
+
+    if (toVisit.length == 0) {
+        return false;
+    } else {
+        let pos = predecessor[[endX,endY].toString()];
+        while (pos != null) {
+            if (grid[pos[0]][pos[1]] != objects.start) {
+                grid[pos[0]][pos[1]] = objects.path;
+                draw();
+                await sleep(50);
+            }
+            pos = predecessor[pos.toString()];
+        }
+        return true;
+    }
 }
 
 function dfs() {
