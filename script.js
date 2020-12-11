@@ -126,6 +126,13 @@ function placeObject(event) {
 }
 
 function run() {
+    for (let i = 0; i < grid.length; i++) {
+        for (let j = 0; j < grid[i].length; j++) {
+            if (grid[i][j] == objects.path || grid[i][j] == objects.visited) {
+                grid[i][j] = objects.empty;
+            }
+        }
+    }
     if (algo == "bfs") {
         bfs();
     } else if (algo == "dfs") {
@@ -218,7 +225,75 @@ async function dfsHelper(x, y, visited) {
 }
 
 async function astar() {
-    
+    let openSet = new Set();
+    let predecessor = {};
+    let gValues = {};
+    let fValues = {};
+
+    openSet.add([startX, startY].toString());
+    gValues[[startX, startY].toString()] = 0;
+    fValues[[startX, startY].toString()] = astarH(startX, startY);
+
+    while (openSet.size != 0) {
+        let pos;
+        let bestF = -1;
+        openSet.forEach(node => {
+            if (bestF == -1 || fValues[node] < bestF) {
+                bestF = fValues[node];
+                pos = node.split(",");
+            }
+        });
+
+        pos[0] = parseInt(pos[0]);
+        pos[1] = parseInt(pos[1]);
+
+        if (pos[0] == endX && pos[1] == endY) {
+            break;
+        }
+
+        if (grid[pos[0]][pos[1]] != objects.start && grid[pos[0]][pos[1]] != objects.end) {
+            grid[pos[0]][pos[1]] = objects.current;
+        }
+        draw();
+        await sleep(50);
+        if (grid[pos[0]][pos[1]] != objects.start && grid[pos[0]][pos[1]] != objects.end) {
+            grid[pos[0]][pos[1]] = objects.visited;
+        }
+        openSet.delete(pos.toString());
+        getNeighbors(pos[0], pos[1]).forEach(nbrPos => {
+            nbr = nbrPos.toString();
+            let newG = gValues[pos.toString()] + 1;
+            if (!gValues.hasOwnProperty(nbr) || newG < gValues[nbr]) {
+                predecessor[nbr] = pos;
+                gValues[nbr] = newG;
+                console.log(pos + " " + nbrPos);
+                fValues[nbr] = newG + astarH(nbrPos[0], nbrPos[1]);
+                if (!openSet.has(nbr)) {
+                    openSet.add(nbr);
+                }
+            }
+        })
+    }
+    if (openSet.size == 0) {
+        return false;
+    } else {
+        let pos = predecessor[[endX,endY].toString()];
+        while (pos != null) {
+            grid[pos[0]][pos[1]] = objects.path;
+            draw();
+            await sleep(50);
+            if (predecessor.hasOwnProperty(pos.toString()) && !(predecessor[pos.toString()][0] == startX && predecessor[pos.toString()][1] == startY)) {
+                pos = predecessor[pos.toString()];
+            } else {
+                pos = null;
+            }
+        }
+        return true;
+    }
+}
+
+function astarH(x, y) {
+    return Math.abs(endX - x) + Math.abs(endY - y);
 }
 
 function getNeighbors(x, y) {
