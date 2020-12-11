@@ -139,6 +139,8 @@ function run() {
         dfs();
     } else if (algo == "astar") {
         astar();
+    } else if (algo == "greedy") {
+        greedy();
     }
 }
 
@@ -294,6 +296,67 @@ async function astar() {
 
 function astarH(x, y) {
     return Math.abs(endX - x) + Math.abs(endY - y);
+}
+
+async function greedy() {
+    let openSet = new Set();
+    let predecessor = {};
+    let hValues = {};
+
+    openSet.add([startX, startY].toString());
+    hValues[[startX, startY].toString()] = astarH(startX, startY);
+
+    while (openSet.size != 0) {
+        let pos;
+        let bestH = -1;
+        openSet.forEach(node => {
+            if (bestH == -1 || hValues[node] < bestH) {
+                bestH = hValues[node];
+                pos = node.split(",");
+            }
+        });
+
+        pos[0] = parseInt(pos[0]);
+        pos[1] = parseInt(pos[1]);
+
+        if (pos[0] == endX && pos[1] == endY) {
+            break;
+        }
+
+        if (grid[pos[0]][pos[1]] != objects.start && grid[pos[0]][pos[1]] != objects.end) {
+            grid[pos[0]][pos[1]] = objects.current;
+        }
+        draw();
+        await sleep(50);
+        if (grid[pos[0]][pos[1]] != objects.start && grid[pos[0]][pos[1]] != objects.end) {
+            grid[pos[0]][pos[1]] = objects.visited;
+        }
+        openSet.delete(pos.toString());
+        getNeighbors(pos[0], pos[1]).forEach(nbrPos => {
+            nbr = nbrPos.toString();
+            if (!hValues.hasOwnProperty(nbr)) {
+                predecessor[nbr] = pos
+                hValues[nbr] = astarH(nbrPos[0], nbrPos[1]);
+                openSet.add(nbr);
+            }
+        })
+    }
+    if (openSet.size == 0) {
+        return false;
+    } else {
+        let pos = predecessor[[endX,endY].toString()];
+        while (pos != null) {
+            grid[pos[0]][pos[1]] = objects.path;
+            draw();
+            await sleep(50);
+            if (predecessor.hasOwnProperty(pos.toString()) && !(predecessor[pos.toString()][0] == startX && predecessor[pos.toString()][1] == startY)) {
+                pos = predecessor[pos.toString()];
+            } else {
+                pos = null;
+            }
+        }
+        return true;
+    }
 }
 
 function getNeighbors(x, y) {
