@@ -6,6 +6,7 @@ let boxWidth, boxHeight;
 let numBoxesX = 25, numBoxesY = 15;
 let startX = 0, startY = 0, endX = numBoxesX - 1, endY = numBoxesY - 1;
 let grid;
+let running = false;
 
 let objects = {
     empty: 0,
@@ -103,6 +104,9 @@ function draw() {
 draw();
 
 function placeObject(event) {
+    if (running) {
+        return;
+    }
     posX = Math.floor(event.clientX/boxWidth);
     posY = Math.floor((event.clientY-46)/boxHeight);
     if (tool == "start") {
@@ -125,10 +129,30 @@ function placeObject(event) {
     draw();
 }
 
-function run() {
+function reset() {
+    running = false;
     for (let i = 0; i < grid.length; i++) {
         for (let j = 0; j < grid[i].length; j++) {
-            if (grid[i][j] == objects.path || grid[i][j] == objects.visited) {
+            grid[i][j] = objects.empty;
+        }
+    }
+    grid[0][0] = objects.start;
+    startX = 0;
+    startY = 0;
+    endX = numBoxesX - 1;
+    endY = numBoxesY - 1;
+    grid[endX][endY] = objects.end;
+    draw();
+}
+
+function run() {
+    if (running) {
+        return;
+    }
+    running = true;
+    for (let i = 0; i < grid.length; i++) {
+        for (let j = 0; j < grid[i].length; j++) {
+            if (grid[i][j] == objects.path || grid[i][j] == objects.visited || grid[i][j] == objects.current) {
                 grid[i][j] = objects.empty;
             }
         }
@@ -155,13 +179,16 @@ async function bfs() {
     });
 
     while (toVisit.length != 0 && !(toVisit[0][0] == endX && toVisit[0][1] == endY)) {
+        if (!running) {
+            return false;
+        }
         let pos = toVisit.shift();
         if (grid[pos[0]][pos[1]] != objects.start) {
             grid[pos[0]][pos[1]] = objects.current;
         }
         draw();
         await sleep(50);
-        if (grid[pos[0]][pos[1]] != objects.start) {
+        if (grid[pos[0]][pos[1]] != objects.start && running) {
             grid[pos[0]][pos[1]] = objects.visited;
         }
         getNeighbors(pos[0], pos[1]).forEach(nbr => {
@@ -184,23 +211,31 @@ async function bfs() {
             }
             pos = predecessor[pos.toString()];
         }
+        running = false;
         return true;
     }
 }
 
-function dfs() {
+async function dfs() {
     let visited = new Set();
     visited.add([startX, startY].toString());
-    dfsHelper(startX, startY, visited);
+    await dfsHelper(startX, startY, visited);
+    running = false;
 }
 
 async function dfsHelper(x, y, visited) {
     if (x == endX && y == endY) {
         return true;
     }
+    if (!running) {
+        return false;
+    }
 
     let neighbors = getNeighbors(x, y);
     for (let i = 0; i < neighbors.length; i++) {
+        if (!running) {
+            return false;
+        }
         let nbr = neighbors[i]
         if (!visited.has(nbr.toString())) {
             if (grid[nbr[0]][nbr[1]] != objects.start && grid[nbr[0]][nbr[1]] != objects.end) {
@@ -209,7 +244,7 @@ async function dfsHelper(x, y, visited) {
             visited.add(nbr.toString());
             draw();
             await sleep(50);
-            if (grid[nbr[0]][nbr[1]] != objects.start && grid[nbr[0]][nbr[1]] != objects.end) {
+            if (grid[nbr[0]][nbr[1]] != objects.start && grid[nbr[0]][nbr[1]] != objects.end && running) {
                 grid[nbr[0]][nbr[1]] = objects.visited;
             }
             let found = await dfsHelper(nbr[0], nbr[1], visited);
@@ -237,6 +272,9 @@ async function astar() {
     fValues[[startX, startY].toString()] = astarH(startX, startY);
 
     while (openSet.size != 0) {
+        if (!running) {
+            return false;
+        }
         let pos;
         let bestF = -1;
         openSet.forEach(node => {
@@ -258,7 +296,7 @@ async function astar() {
         }
         draw();
         await sleep(50);
-        if (grid[pos[0]][pos[1]] != objects.start && grid[pos[0]][pos[1]] != objects.end) {
+        if (grid[pos[0]][pos[1]] != objects.start && grid[pos[0]][pos[1]] != objects.end && running) {
             grid[pos[0]][pos[1]] = objects.visited;
         }
         openSet.delete(pos.toString());
@@ -290,6 +328,7 @@ async function astar() {
                 pos = null;
             }
         }
+        running = false;
         return true;
     }
 }
@@ -307,6 +346,9 @@ async function greedy() {
     hValues[[startX, startY].toString()] = astarH(startX, startY);
 
     while (openSet.size != 0) {
+        if (!running) {
+            return false;
+        }
         let pos;
         let bestH = -1;
         openSet.forEach(node => {
@@ -328,7 +370,7 @@ async function greedy() {
         }
         draw();
         await sleep(50);
-        if (grid[pos[0]][pos[1]] != objects.start && grid[pos[0]][pos[1]] != objects.end) {
+        if (grid[pos[0]][pos[1]] != objects.start && grid[pos[0]][pos[1]] != objects.end && running) {
             grid[pos[0]][pos[1]] = objects.visited;
         }
         openSet.delete(pos.toString());
@@ -355,6 +397,7 @@ async function greedy() {
                 pos = null;
             }
         }
+        running = false;
         return true;
     }
 }
